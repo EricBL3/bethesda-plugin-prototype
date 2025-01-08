@@ -121,4 +121,52 @@ void RunPipeServer() {
 void HandleIncomingMessage(const std::string& message) {
     RE::ConsoleLog::GetSingleton()->PrintLine("Incoming message:");
     RE::ConsoleLog::GetSingleton()->PrintLine(message.c_str());
+
+    //NPC form id: 08001ECD
+    auto npcFormId = 0x08001ECD;
+    //Chair form id: 08001ECE
+    //Chair 2 form id: 000D8F57
+    auto chairFormID = 0x000D8F57;
+
+    if (message == "sit")
+    {
+
+        auto npcForm = RE::TESForm::GetFormByID<RE::Actor>(npcFormId);
+        auto furnitureForm = RE::TESForm::GetFormByID(chairFormID);
+        if (!furnitureForm)
+        {
+            RE::ConsoleLog::GetSingleton()->PrintLine("chair form not found!");
+            return;
+        }
+        if (!npcForm)
+        {
+            RE::ConsoleLog::GetSingleton()->PrintLine("npc form not found!");
+            return;
+        }
+
+        RE::ConsoleLog::GetSingleton()->PrintLine("Found form IDs!");
+
+        auto npcActor = npcForm->As<RE::TESObjectREFR>();
+        auto furnitureRef = furnitureForm->As<RE::TESObjectREFR>();
+
+        if (npcActor && furnitureRef)
+        {
+            auto aiPackage = RE::AIProcess::CreateSitPackage(furnitureRef, npcActor);
+            RE::ConsoleLog::GetSingleton()->PrintLine("Will activate chair!");
+            npcActor->Activate(furnitureRef, npcActor, nullptr, 1);
+            npcActor->AddPackage();
+            RE::ConsoleLog::GetSingleton()->PrintLine("chair activated!");
+        }
+        else
+        {
+            if (!npcActor)
+            {
+                RE::ConsoleLog::GetSingleton()->PrintLine("npc reference could not be found!");
+            }
+            if (!furnitureRef)
+            {
+                RE::ConsoleLog::GetSingleton()->PrintLine("chair reference not found!");
+            }
+        }
+    }
 }

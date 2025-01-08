@@ -8,7 +8,7 @@ int main()
     // Example command (JSON format or any other structured format)
     std::string command = R"({"npcId": "12345", "action": "sit"})";
 
-    command = "Hello from the planner app!";
+    command = "sit";
 
     // Send the command to the pipe server
     SendCommand(command);

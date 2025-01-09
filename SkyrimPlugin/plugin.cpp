@@ -4,11 +4,14 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
 
     SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *message) {
         if (message->type == SKSE::MessagingInterface::kDataLoaded)
+        {
             RE::ConsoleLog::GetSingleton()->Print("Welcome to the Skyrim prototype plugin!");
 
             RE::ConsoleLog::GetSingleton()->Print("Starting pipe server...");
-            //std::thread pipeThread(RunPipeServer);
-            //pipeThread.detach();
+            std::thread pipeThread(RunPipeServer);
+            pipeThread.detach();
+
+        }
     });
 
     return true;

@@ -1,7 +1,73 @@
 
+class OurEventSink : public RE::BSTEventSink<RE::TESCellFullyLoadedEvent> {
+    OurEventSink() = default;
+    OurEventSink(const OurEventSink&) = delete;
+    OurEventSink(OurEventSink&&) = delete;
+    OurEventSink& operator=(const OurEventSink&) = delete;
+    OurEventSink& operator=(OurEventSink&&) = delete;
+
+public:
+
+    static OurEventSink* GetSingleton() {
+        static OurEventSink singleton;
+        return &singleton;
+    }
+
+    RE::BSEventNotifyControl ProcessEvent(const RE::TESCellFullyLoadedEvent* event,
+        RE::BSTEventSource<RE::TESCellFullyLoadedEvent>*) {
+        RE::PlayerCharacter* player = RE::PlayerCharacter::GetSingleton();
+
+        if (!event || !player) {
+            return RE::BSEventNotifyControl::kContinue;
+        }
+
+        // Get the current cell the player entered
+        RE::TESObjectCELL* currentCell = player->parentCell;
+
+        if (currentCell) {
+            RE::ConsoleLog::GetSingleton()->Print("Player entered cell: %s", currentCell->GetFullName());
+
+            // Trigger your logic here
+            HandleCellEntry(currentCell);
+        }
+
+        return RE::BSEventNotifyControl::kContinue;
+    }
+
+    void HandleCellEntry(RE::TESObjectCELL* cell) {
+        // Example: Iterate through all NPCs in the cell
+
+        if (!cell)
+        {
+            return;
+        }
+
+        cell->ForEachReference([](RE::TESObjectREFR& ref) -> RE::BSContainer::ForEachResult {
+            if (ref.Is(RE::FormType::ActorCharacter)) {
+                auto actor = ref.As<RE::Actor>();
+                if (actor && !actor->IsPlayerRef()) {
+                    RE::ConsoleLog::GetSingleton()->Print("Found NPC: %s", actor->GetName());
+                    // Iterate throught npc actions
+                }
+            }
+
+            return RE::BSContainer::ForEachResult::kContinue;
+            });
+
+    }
+};
+
 SKSEPluginLoad(const SKSE::LoadInterface *skse) {
     SKSE::Init(skse);
 
+    // Add event sink
+    auto* eventSink = OurEventSink::GetSingleton();
+
+    // ScriptSource
+    auto* eventSourceHolder = RE::ScriptEventSourceHolder::GetSingleton();
+    eventSourceHolder->AddEventSink<RE::TESCellFullyLoadedEvent>(eventSink);
+
+    // register pipe
     SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *message) {
         if (message->type == SKSE::MessagingInterface::kDataLoaded)
         {
@@ -14,8 +80,11 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
         }
     });
 
+
     return true;
 }
+
+#pragma region Pipes
 
 HANDLE CreatePipeInstance()
 {
@@ -168,3 +237,5 @@ void HandleIncomingMessage(const std::string& message) {
     //    }
     //}
 }
+
+#pragma endregion Pipes

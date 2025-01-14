@@ -1,3 +1,4 @@
+#include "logger.h"
 
 class OurEventSink : public RE::BSTEventSink<RE::TESCellFullyLoadedEvent> {
     OurEventSink() = default;
@@ -17,15 +18,21 @@ public:
         RE::BSTEventSource<RE::TESCellFullyLoadedEvent>*) {
         RE::PlayerCharacter* player = RE::PlayerCharacter::GetSingleton();
 
+        SKSE::log::info("Loading player from cell fully loaded event");
+
         if (!event || !player) {
+            SKSE::log::warn("Player or event not found");
             return RE::BSEventNotifyControl::kContinue;
         }
 
         // Get the current cell the player entered
         RE::TESObjectCELL* currentCell = player->parentCell;
+        SKSE::log::info("Loading current cell");
 
         if (currentCell) {
             RE::ConsoleLog::GetSingleton()->Print("Player entered cell: %s", currentCell->GetFullName());
+
+            SKSE::log::info("Player entered cell: {}", currentCell->GetFullName());
 
             // Trigger your logic here
             HandleCellEntry(currentCell);
@@ -42,23 +49,29 @@ public:
             return;
         }
 
+        SKSE::log::info("Checking cell references");
+
         cell->ForEachReference([](RE::TESObjectREFR& ref) -> RE::BSContainer::ForEachResult {
             if (ref.Is(RE::FormType::ActorCharacter)) {
                 auto actor = ref.As<RE::Actor>();
+                SKSE::log::info("reference is actor");
                 if (actor && !actor->IsPlayerRef()) {
                     RE::ConsoleLog::GetSingleton()->Print("Found NPC: %s", actor->GetName());
+                    SKSE::log::info("Found NPC: {}", actor->GetName());
                     // Iterate throught npc actions
                 }
             }
 
             return RE::BSContainer::ForEachResult::kContinue;
-            });
+        });
 
     }
 };
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse) {
     SKSE::Init(skse);
+
+    SetupLog();
 
     // Add event sink
     auto* eventSink = OurEventSink::GetSingleton();
